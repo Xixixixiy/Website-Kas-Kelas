@@ -1,7 +1,16 @@
 <?php
+
+/**
+ * ========================================
+ * PROSES LOGIN - VERIFIKASI IDENTITAS USER
+ * ========================================
+ * File ini menangani proses autentikasi user
+ * berdasarkan NISN/NIK dan password
+ */
+
 session_start();
 
-// Cek apakah file benar-benar ada secara fisik
+// Include file konfigurasi database
 $path_db = __DIR__ . "/../config/database.php";
 
 if (!file_exists($path_db)) {
@@ -10,16 +19,18 @@ if (!file_exists($path_db)) {
 
 include $path_db;
 
-// Tes apakah variabel $conn ada setelah di-include
+// Validasi koneksi database
 if (!isset($conn)) {
     die("Error: Variabel \$conn tidak ditemukan. Periksa isi file config/database.php kamu.");
 }
 
+// Cek apakah form sudah disubmit
 if (isset($_POST['nisn_nik']) && isset($_POST['password'])) {
-
+    // Ambil data dari form
     $identitas = mysqli_real_escape_string($conn, $_POST['nisn_nik']);
-    $password  = $_POST['password'];
+    $password = $_POST['password'];
 
+    // Query untuk mencari user berdasarkan identitas (NISN/NIK)
     $sql = "SELECT u.*, r.role, a.nama_anggota 
             FROM user u
             JOIN role r ON u.id_role = r.id_role
@@ -29,44 +40,41 @@ if (isset($_POST['nisn_nik']) && isset($_POST['password'])) {
 
     $result = mysqli_query($conn, $sql);
 
+    // Cek apakah user ditemukan
     if ($result && mysqli_num_rows($result) > 0) {
         $data = mysqli_fetch_assoc($result);
 
-        // Debug: Pastikan password di database sama dengan input
+        // Verifikasi password
         if ($password === $data['password']) {
+            // Set session data
             $_SESSION['id_user']  = $data['id_user'];
             $_SESSION['nama']     = $data['nama_anggota'];
             $_SESSION['role']     = $data['role'];
             $_SESSION['id_kelas'] = $data['id_kelas'];
 
-            // --- BAGIAN DEBUG MULAI DI SINI ---
-            // Kita matikan redirect-nya dulu biar bisa liat datanya
-            // echo "<h2>Login Berhasil!</h2>";
-            // echo "Data Session yang tersimpan:<br>";
-            // echo "Nama: " . $_SESSION['nama'] . "<br>";
-            // echo "Role: " . $_SESSION['role'] . "<br>";
-            // echo "ID Kelas: " . $_SESSION['id_kelas'] . "<br>";
-            // echo "<hr>";
-
+            // Tentukan halaman tujuan berdasarkan role
             $role_cek = strtolower(trim($data['role']));
             $target = "";
-            if ($role_cek == 'bendahara') {
+
+            if ($role_cek === 'bendahara') {
                 $target = "bendahara/dashboard.php";
-            } elseif ($role_cek == 'wali kelas' || $role_cek == 'wali_kelas') {
+            } elseif ($role_cek === 'wali kelas' || $role_cek === 'wali_kelas') {
                 $target = "wali_kelas/dashboard.php";
-            } elseif ($role_cek == 'ketua kelas' || $role_cek == 'ketua_kelas') {
+            } elseif ($role_cek === 'ketua kelas' || $role_cek === 'ketua_kelas') {
                 $target = "ketua_kelas/dashboard.php";
             } else {
                 $target = "murid/dashboard.php";
             }
 
-            // AKTIFKAN REDIRECT INI
+            // Redirect ke dashboard sesuai role
             header("Location: " . $base_url . $target);
             exit();
         } else {
+            // Password salah
             echo "<script>alert('Password Salah!'); window.history.back();</script>";
         }
     } else {
+        // User tidak ditemukan atau akun tidak aktif
         echo "<script>alert('User tidak ditemukan atau Akun Tidak Aktif!'); window.history.back();</script>";
     }
 }
