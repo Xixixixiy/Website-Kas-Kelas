@@ -1,4 +1,4 @@
-# 💰 Sistem Informasi Kas Kelas (Gemini-Cash)
+# 💰 Sistem Informasi Kas Kelas
 
 Sistem manajemen kas kelas berbasis Web yang dirancang untuk transparansi keuangan antara Bendahara, Murid, dan Wali Kelas. Dilengkapi dengan fitur **Logika FIFO** untuk pembayaran iuran mingguan secara otomatis.
 
@@ -23,4 +23,4 @@ Sistem manajemen kas kelas berbasis Web yang dirancang untuk transparansi keuang
 
 1. **Clone Repository**
    ```bash
-   git clone [https://github.com/username-kamu/nama-repo.git](https://github.com/username-kamu/nama-repo.git)
+   git clone [https://github.com/Xixixixiy/Project-Kas-Kelas.git](https://github.com/Xixixixiy/Project-Kas-Kelas.git)
