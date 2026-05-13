@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ========================================
  * PROSES TAMBAH TRANSAKSI - PEMASUKAN KAS
@@ -121,10 +122,5 @@ if ($berhasil > 0) {
 } else {
     $_SESSION['error'] = "Gagal menyimpan transaksi!";
     header("Location: " . $_SERVER['HTTP_REFERER']);
-    exit;
-}
-    // --- Jika Gagal ---
-    $_SESSION['error'] = "Gagal menyimpan data. Minggu mungkin sudah lunas atau input tidak valid.";
-    header("Location: " . $_SERVER['HTTP_REFERER']); // Balik ke halaman sebelumnya
     exit;
 }

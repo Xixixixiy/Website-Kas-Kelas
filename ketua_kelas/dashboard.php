@@ -230,28 +230,3 @@ $transaksi = mysqli_query($conn, "
 </body>
 
 </html>
-</div>
-</div>
-</div>
-</div>
-
-<script>
-    const ctx = document.getElementById('perbandinganKasChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Masuk', 'Keluar'],
-            datasets: [{
-                data: [<?php echo $pemasukan; ?>, <?php echo $pengeluaran; ?>],
-                backgroundColor: ['#0d6efd', '#dc3545']
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false
-        }
-    });
-</script>
-</body>
-
-</html>

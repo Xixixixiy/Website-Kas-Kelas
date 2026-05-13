@@ -9,7 +9,7 @@
  */
 
 session_start();
-include "../config/database.php";
+include __DIR__ . "/../config/database.php";
 
 // --- VALIDASI AKSES ---
 if (!isset($_SESSION['role']) || strtolower($_SESSION['role']) !== 'wali_kelas') {
