@@ -3,12 +3,44 @@ session_start();
 include __DIR__ . "/../config/database.php";
 
 // --- 1. AMBIL DATA DARI FORM ---
-$id_kelas    = $_SESSION['id_kelas']; // Kita ambil dari session agar data terkunci pada kelas tersebut
-$jumlah      = $_POST['jumlah'];
-$keterangan  = $_POST['keterangan'];
-$jenis       = "Keluar"; // Sesuai input hidden atau set manual
-$tgl_today   = date('Y-m-d'); // Mengambil tanggal hari ini otomatis
+$id_kelas   = $_SESSION['id_kelas'];
+$id_user_bendahara = $_SESSION['id_user'];
+$jumlah     = $_POST['nominal'] ?? 0;
+$keterangan = $_POST['keterangan'] ?? '';
+$id_kategori_pengeluaran = 4; // Sesuai kategori keluar di DB kamu
 
+// --- 2. VALIDASI KOSONG ---
+if (empty($jumlah) || empty($keterangan)) {
+    $_SESSION['error'] = "Gagal! Semua field wajib diisi.";
+    header("Location: " . $_SERVER['HTTP_REFERER']);
+    exit;
+}
+
+// --- 3. HITUNG SALDO UNTUK VALIDASI ---
+$q_masuk = mysqli_query($conn, "SELECT SUM(t.nominal) as total 
+                                FROM transaksi t 
+                                JOIN kategori k ON t.id_kategori = k.id_kategori 
+                                JOIN user u ON t.id_user = u.id_user
+                                WHERE u.id_kelas = '$id_kelas' AND k.jenis = 'Masuk'");
+
+$q_keluar = mysqli_query($conn, "SELECT SUM(t.nominal) as total 
+                                 FROM transaksi t 
+                                 JOIN kategori k ON t.id_kategori = k.id_kategori 
+                                 JOIN user u ON t.id_user = u.id_user
+                                 WHERE u.id_kelas = '$id_kelas' AND k.jenis = 'Keluar'");
+
+$res_masuk = mysqli_fetch_assoc($q_masuk)['total'] ?? 0;
+$res_keluar = mysqli_fetch_assoc($q_keluar)['total'] ?? 0;
+$saldo = $res_masuk - $res_keluar;
+
+// Validasi jika saldo tidak cukup
+if ($jumlah > $saldo) {
+    $_SESSION['error'] = "Saldo tidak cukup! Sisa saldo: Rp " . number_format($saldo, 0, ',', '.');
+    header("Location: " . $_SERVER['HTTP_REFERER']);
+    exit;
+}
+
+// --- 4. PROSES SIMPAN ---
 $bulan_sekarang = [
     'Januari',
     'Februari',
@@ -22,31 +54,17 @@ $bulan_sekarang = [
     'Oktober',
     'November',
     'Desember'
-][(int)date('m') - 1]; // Ambil nama bulan dari array
+][(int)date('m') - 1];
 
-// --- 2. VALIDASI BACKEND (Opsional tapi penting) ---
-// Kita cek lagi saldonya di sini buat jaga-jaga kalau user "nakal" bypass Javascript
-$q_masuk  = mysqli_query($conn, "SELECT SUM(jumlah) as total FROM transaksi WHERE jenis='Masuk'");
-$q_keluar = mysqli_query($conn, "SELECT SUM(jumlah) as total FROM transaksi WHERE jenis='Keluar'");
-$saldo    = mysqli_fetch_assoc($q_masuk)['total'] - mysqli_fetch_assoc($q_keluar)['total'];
+$query = mysqli_query($conn, "INSERT INTO transaksi (id_user, id_kategori, nominal, keterangan, bulan, tahun, created_at) 
+          VALUES ('$id_user_bendahara', '$id_kategori_pengeluaran', '$jumlah', '$keterangan', '$bulan_sekarang', '" . date('Y') . "', NOW())");
 
-if ($jumlah > $saldo) {
-    echo "<script>alert('Error: Saldo tidak mencukupi!'); window.location='pengeluaran.php';</script>";
-    exit;
-}
-
-// --- 3. QUERY SIMPAN ---
-// Perhatikan: Kita hanya mengisi kolom yang perlu saja. 
-// id_murid, bulan, dan minggu dibiarkan kosong karena ini pengeluaran kelas.
-$query = mysqli_query($conn, "INSERT INTO transaksi (id_kelas, tanggal, jenis, jumlah, keterangan, bulan) 
-          VALUES ('$id_kelas', '$tgl_today', 'Keluar', '$jumlah', '$keterangan', '$bulan_sekarang')");
-
-// --- 4. REDIRECT SETELAH BERHASIL ---
+// --- 5. REDIRECT DENGAN SESSION ---
 if ($query) {
-    echo "<script>
-            alert('Berhasil! Pengeluaran telah dicatat.');
-            window.location='pengeluaran.php';
-          </script>";
+    $_SESSION['success'] = "Berhasil! Pengeluaran telah dicatat.";
+    header("Location: ../bendahara/transaksi_keluar.php"); // Sesuaikan folder tujuan
 } else {
-    echo "Gagal simpan data: " . mysqli_error($conn);
+    $_SESSION['error'] = "Gagal simpan data: " . mysqli_error($conn);
+    header("Location: " . $_SERVER['HTTP_REFERER']);
 }
+exit;

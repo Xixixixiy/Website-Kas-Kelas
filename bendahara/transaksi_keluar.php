@@ -49,7 +49,7 @@ $kategori_keluar = mysqli_query($conn, "SELECT * FROM kategori WHERE id_kategori
                 <strong class="fs-5">Rp <?= number_format($saldo_saat_ini, 0, ',', '.') ?></strong>
             </div>
 
-            <form action="actions/proses_keluar.php" method="POST">
+            <form action="../actions/proses_keluar.php" method="POST">
                 <div class="row">
                     <div class="col-md-6">
                         <div class="mb-3">
@@ -101,6 +101,8 @@ $kategori_keluar = mysqli_query($conn, "SELECT * FROM kategori WHERE id_kategori
             }
         });
     </script>
+
+    <?php include "../layout/notifikasi.php"; ?>
 </body>
 
 </html>

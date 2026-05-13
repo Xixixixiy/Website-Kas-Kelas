@@ -1,3 +1,5 @@
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <?php if (isset($_SESSION['error'])) : ?>
     <script>
         Swal.fire({
@@ -7,10 +9,8 @@
             confirmButtonColor: '#d33',
         });
     </script>
-
     <?php unset($_SESSION['error']); ?>
 <?php endif; ?>
-
 
 <?php if (isset($_SESSION['success'])) : ?>
     <script>

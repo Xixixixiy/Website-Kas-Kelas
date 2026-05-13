@@ -77,7 +77,7 @@ if ($user_terpilih) {
 
         <div class="card border-0 shadow-sm p-4" style="border-radius: 20px;">
 
-            <form action="actions/proses_tambah.php" method="POST">
+            <form action="../actions/proses_tambah.php" method="POST">
                 <div class="row">
                     <div class="col-md-6">
                         <div class="mb-3">
@@ -255,7 +255,7 @@ if ($user_terpilih) {
         });
     </script>
 
-    <?php include 'layout/notifikasi.php'; ?>
+    <?php include '../layout/notifikasi.php'; ?>
 </body>
 
 </html>

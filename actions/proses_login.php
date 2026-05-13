@@ -60,8 +60,9 @@ if (isset($_POST['nisn_nik']) && isset($_POST['password'])) {
                 $target = "murid/dashboard.php";
             }
 
-            echo "Link tujuan manual: <a href='" . $base_url . $target . "'>KLIK DI SINI UNTUK KE DASHBOARD</a>";
-            exit;
+            // AKTIFKAN REDIRECT INI
+            header("Location: " . $base_url . $target);
+            exit();
         } else {
             echo "<script>alert('Password Salah!'); window.history.back();</script>";
         }
@@ -69,6 +70,3 @@ if (isset($_POST['nisn_nik']) && isset($_POST['password'])) {
         echo "<script>alert('User tidak ditemukan atau Akun Tidak Aktif!'); window.history.back();</script>";
     }
 }
-
-
-echo $_SESSION['role'];

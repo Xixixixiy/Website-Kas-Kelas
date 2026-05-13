@@ -2,45 +2,60 @@
 session_start();
 include __DIR__ . "/../config/database.php";
 
-// --- 1. VALIDASI AKSES & INPUT ---
+// --- 1. VALIDASI AKSES ---
 if (!isset($_SESSION['role']) || strtolower(trim($_SESSION['role'])) != 'bendahara') {
     header("Location: ../login.php");
     exit;
 }
 
-// Validasi dasar (Minggu hanya wajib jika kategori adalah Uang Kas / ID 1)
-$id_kategori = $_POST['id_kategori'];
-if (empty($_POST['id_user']) || empty($id_kategori) || ($id_kategori == 1 && empty($_POST['minggu']))) {
-    $_SESSION['error'] = "Data tidak lengkap!";
+// --- 2. VALIDASI INPUT KOSONG ---
+$id_kategori   = $_POST['id_kategori'] ?? '';
+$id_pembayar   = $_POST['id_user'] ?? '';
+$nominal_total = $_POST['nominal'] ?? '';
+$bulan         = $_POST['bulan'] ?? '';
+$tahun         = $_POST['tahun'] ?? '';
+$minggu_input  = $_POST['minggu'] ?? '';
+
+// Cek apakah field utama ada yang kosong
+if (empty($id_pembayar) || empty($id_kategori) || empty($nominal_total) || empty($bulan) || empty($tahun)) {
+    $_SESSION['error'] = "Gagal! Semua field wajib diisi.";
     header("Location: " . $_SERVER['HTTP_REFERER']);
     exit;
 }
 
-// --- 2. DEKLARASI VARIABEL ---
-$id_pembayar   = $_POST['id_user'];
-$nominal_total = $_POST['nominal'];
+// Cek khusus untuk Kas (ID 1), minggu tidak boleh kosong
+if ($id_kategori == 1 && empty($minggu_input)) {
+    $_SESSION['error'] = "Gagal! Untuk uang kas, target minggu harus dipilih.";
+    header("Location: " . $_SERVER['HTTP_REFERER']);
+    exit;
+}
+
+// Cek nominal tidak boleh nol atau negatif
+if ($nominal_total <= 0) {
+    $_SESSION['error'] = "Gagal! Nominal harus lebih besar dari 0.";
+    header("Location: " . $_SERVER['HTTP_REFERER']);
+    exit;
+}
+
+// --- 3. DEKLARASI VARIABEL LANJUTAN ---
 $keterangan    = $_POST['keterangan'] ?? 'Pembayaran Kas';
-$bulan         = $_POST['bulan'];
-$tahun         = $_POST['tahun'];
 $tanggal       = date('Y-m-d H:i:s');
 $berhasil      = 0;
 
-// --- 3. PERCABANGAN LOGIKA BERDASARKAN KATEGORI ---
+// --- 4. PERCABANGAN LOGIKA BERDASARKAN KATEGORI ---
 
 if ($id_kategori != 1) {
-    // --- JIKA KATEGORI ADALAH DENDA / SUMBANGAN (BUKAN KAS) ---
-    // Langsung insert satu kali, kolom minggu dikosongkan atau diisi '-'
+    // --- JIKA KATEGORI ADALAH DENDA / SUMBANGAN ---
     $query_ins = "INSERT INTO transaksi (id_user, id_kategori, nominal, keterangan, bulan, tahun, minggu, created_at)
                   VALUES ('$id_pembayar', '$id_kategori', '$nominal_total', '$keterangan', '$bulan', '$tahun', '-', '$tanggal')";
 
     if (mysqli_query($conn, $query_ins)) {
         $berhasil = 1;
     } else {
-        die("Gagal Simpan Denda: " . mysqli_error($conn));
+        die("Gagal Simpan: " . mysqli_error($conn));
     }
 } else {
     // --- JIKA KATEGORI ADALAH UANG KAS (ID 1) -> PAKAI LOGIKA FIFO ---
-    $minggu_input  = $_POST['minggu'];
     $target_minggu = (int) str_replace(['M', '-'], '', $minggu_input);
 
     // A. Hitung lubang kosong
@@ -75,10 +90,16 @@ if ($id_kategori != 1) {
     }
 }
 
-// --- 4. FEEDBACK ---
+// --- 5. FEEDBACK ---
+// --- Jika Berhasil ---
 if ($berhasil > 0) {
     $pesan = ($id_kategori == 1) ? "Berhasil mencatat $berhasil minggu!" : "Berhasil mencatat data transaksi!";
-    echo "<script>alert('$pesan'); window.location='../transaksi_masuk.php';</script>";
+    $_SESSION['success'] = $pesan; // Simpan pesan sukses ke session
+    header("Location: ../bendahara/transaksi_masuk.php");
+    exit;
 } else {
-    echo "<script>alert('Gagal menyimpan data. Minggu mungkin sudah lunas.'); window.history.back();</script>";
+    // --- Jika Gagal ---
+    $_SESSION['error'] = "Gagal menyimpan data. Minggu mungkin sudah lunas atau input tidak valid.";
+    header("Location: " . $_SERVER['HTTP_REFERER']); // Balik ke halaman sebelumnya
+    exit;
 }
